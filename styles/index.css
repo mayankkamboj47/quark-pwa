@@ -1,3 +1,7 @@
 #logo, form{
     text-align: center;
 }
+
+#search_results a{
+    display : block;
+}

@@ -4,13 +4,15 @@
  */
 const offlineAssets = ['./', '/styles/index.css', './main.js'];
 /* offline Docs are files the search engine will search from. 
-Testing only. Soon, entire docs directory will be dynamically loaded. 
+Testing only. Soon, entire docs directory will be dynamically loaded, instead of needing to modify
+the offlineDocs array
 */
 const offlineDocs = ['./docs/1.html', './docs/2.html', './docs/3.html'];
 self.addEventListener('install', (e)=>{
     console.log('Service worker installed');
-    e.waitUntil(addAllToCache(offlineAssets));
-    e.waitUntil(addToTaggedCache(offlineDocs));
+    // save both assets and docs offline before installing
+    e.waitUntil(addAllToCache('assets', offlineAssets));
+    e.waitUntil(addAllToCache('docs', offlineDocs));
 });
 
 self.addEventListener('activate', () => {
@@ -29,25 +31,11 @@ self.addEventListener('fetch', (e)=>{
  * ++++++++++++++++++++
  */
 
-function addAllToCache(resources){
-    return caches.open('assets').then(cache => cache.addAll(resources));
+function addAllToCache(cacheName, resources){
+    return caches.open(cacheName).then(cache => cache.addAll(resources));
 }
-
-function addToTaggedCache(resources) {
-    return caches.open('tagged').then(taggedCache => {
-        return Promise.all(resources.map(resource=>{
-            return fetch(resource).then((response)=>{
-                // tagify is yet to be implemented.
-                // do something with tags, like store them properly in indexedDB
-                // before that, the project will probably be moved to workbox. 
-                // or is it a good decision ? Time to git it. 
-                return taggedCache.put(resource, response);
-            });
-        }));
-    });
-}
-
 /**
+ * cacheNetworkRace(request) --> Promise(Response)
  * To fix : We need to somehow compare the two responses in cacheFinish.then, 
  * the 'r' and 'res' and cache the more fresh one. This will require checking the
  * response time data, if such a thing is available
@@ -61,13 +49,14 @@ function cacheNetworkRace(request){
                 resolve(r);
                 return r;
             }
+            // otherwise go with the network's response
         }).catch(()=>{});
         fetch(request).then(res=>{
             caches.open('responses').then(responses=>{
                 // once network finishes, wait for cache to finish
                 // and then cache this response if needed
                 cacheFinish.then(r=>r ? null : responses.put(request, res.clone()));
-                // but don't wait. Resolve immediately with what we have. 
+                // but don't wait for that. Resolve immediately with what we got
                 resolve(res);
             });
         }).catch(reject);
@@ -75,9 +64,9 @@ function cacheNetworkRace(request){
 }
 
 async function generateResponseFromCache(query){
-    const taggedCache = await caches.open('tagged');
-    const keys = await taggedCache.keys();
-    const responses = await Promise.all(keys.map(key=>taggedCache.match(key)));
+    const docs = await caches.open('docs');
+    const keys = await docs.keys();
+    const responses = await Promise.all(keys.map(key=>docs.match(key)));
     const responseTexts = await Promise.all(responses.map(r=>r.text()));
     console.log(responseTexts, 'in generate response from cache');
     const sortedByDist = responseTexts.map((text, i)=>({url :keys[i].url, dist : document_distance(text, query)})).sort((a,b)=>b.dist - a.dist).map(
@@ -97,6 +86,10 @@ function document_distance(d1, d2){
     return dot_prod(vector(d1), vector(d2))/(size(d1)*size(d2));
 }
 
+/*
+router(request) -> Promise(response)
+Takes a request, and passes it along to the function that handles that particular url
+*/
 async function router(request){
     const routes = {
         'https?:\/\/.+\/search\/(.+)' : generateResponseFromCache,
@@ -106,7 +99,6 @@ async function router(request){
     };
     for(let key in routes){
         let rex = new RegExp(key).exec(request.url);
-        if(rex) console.log('match', rex);
         if(rex) return routes[key].apply(self, rex.slice(1));
     }
     return defaultRoute(request);
