@@ -1,4 +1,4 @@
-
+module.exports =  (offlineDocs)=>`
 /**
  * offlineAssets : Things that will be precached when the service worker installs 
  * Note : This is not the same as 'when the app is installed'
@@ -8,7 +8,7 @@ const offlineAssets = ['./', '/styles/index.css', './main.js'];
 Testing only. Soon, entire docs directory will be dynamically loaded, instead of needing to modify
 the offlineDocs array
 */
-const offlineDocs = ['./docs/arrays.html','./docs/cryptography.html','./docs/linked_lists.html'];
+const offlineDocs = [${offlineDocs.map(r=>'\''+r+'\'')}];
 self.addEventListener('install', (e)=>{
     console.log('Service worker installed');
     // save both assets and docs offline before installing
@@ -93,7 +93,7 @@ Takes a request, and passes it along to the function that handles that particula
 */
 async function router(request){
     const routes = {
-        'https?://.+/search/(.+)' : generateResponseFromCache,
+        'https?:\/\/.+\/search\/(.+)' : generateResponseFromCache,
     };
     const defaultRoute = async function(request){
         return caches.match(request).then(r=>r || new Response('404 not found :/', {status : 404, type : 'text/html'}));
@@ -104,3 +104,4 @@ async function router(request){
     }
     return defaultRoute(request);
 }
+`;
