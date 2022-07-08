@@ -5,7 +5,15 @@
  */
 const offlineAssets = ['./', '/styles/index.css', './main.js'];
 // offlineDocs are what the search engine uses to search from
-const offlineDocs = ['./docs/linked_lists.html','./docs/marijn_eloquent.html','./docs/sicp.html'];
+const offlineDocs = ['./docs/marijn_eloquent.html','./docs/sicp.html'];
+
+(async function(){
+    const docs = await caches.open('docs');
+    let links = (await docs.keys()).map(req=>'./'+req.url.slice(req.url.indexOf('docs/')));
+    let toRemove = links.filter(link=>offlineDocs.indexOf(link) === -1)
+    console.log(toRemove, 'no longer needed', 'removing...');
+    toRemove.forEach(link=>docs.delete(link))
+})();
 
 function documentDistance(d1, d2){
     const vector = doc => doc.split(' ').reduce((obj, word)=>{

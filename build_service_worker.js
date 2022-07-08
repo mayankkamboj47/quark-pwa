@@ -8,6 +8,16 @@ module.exports =  (offlineDocs, documentDistance)=>`
 const offlineAssets = ['./', '/styles/index.css', './main.js'];
 // offlineDocs are what the search engine uses to search from
 const offlineDocs = [${offlineDocs.map(r=>'\''+r+'\'')}];
+
+(async function(){
+    if(! await caches.has('docs)) return;
+    const docs = await caches.open('docs');
+    let links = (await docs.keys()).map(req=>'./'+req.url.slice(req.url.indexOf('docs/')));
+    let toRemove = links.filter(link=>offlineDocs.indexOf(link) === -1)
+    console.log(toRemove, 'no longer needed', 'removing...');
+    toRemove.forEach(link=>docs.delete(link))
+})();
+
 ${documentDistance.toString()}
 self.addEventListener('install', (e)=>{
     console.log('Service worker installed');
