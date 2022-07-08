@@ -4,11 +4,21 @@
  * Note : This is not the same as 'when the app is installed'
  */
 const offlineAssets = ['./', '/styles/index.css', './main.js'];
-/* offline Docs are files the search engine will search from. 
-Testing only. Soon, entire docs directory will be dynamically loaded, instead of needing to modify
-the offlineDocs array
-*/
+// offlineDocs are what the search engine uses to search from
 const offlineDocs = ['./docs/arrays.html','./docs/cryptography.html','./docs/linked_lists.html'];
+function documentDistance(d1, d2){
+    const vector = doc => doc.split(' ').reduce((obj, word)=>{
+        if(word in obj) obj[word]++;
+        else obj[word] = 1;
+        return obj;
+    }, {});
+    const dot_prod = (v1, v2)=> Object.keys(v1).reduce((sum, key)=> sum+v1[key]*(v2[key] || 0), 0);
+    const size = (x) => Object.values(vector(x)).reduce((sum, v)=>sum + v**2, 0)**0.5;
+    const v1 = vector(d1);
+    const v2 = vector(d2);
+    console.log(v1, v2);
+    return dot_prod(vector(d1), vector(d2))/(size(d1)*size(d2));
+}
 self.addEventListener('install', (e)=>{
     console.log('Service worker installed');
     // save both assets and docs offline before installing
@@ -70,21 +80,10 @@ async function generateResponseFromCache(query){
     const responses = await Promise.all(keys.map(key=>docs.match(key)));
     const responseTexts = await Promise.all(responses.map(r=>r.text()));
     console.log(responseTexts, 'in generate response from cache');
-    const sortedByDist = responseTexts.map((text, i)=>({url :keys[i].url, dist : document_distance(text, query)})).sort((a,b)=>b.dist - a.dist).map(
+    const sortedByDist = responseTexts.map((text, i)=>({url :keys[i].url, dist : documentDistance(text, query)})).sort((a,b)=>b.dist - a.dist).map(
         r=>r.url
     );
     return new Response(JSON.stringify(sortedByDist), {'Content-Type' : 'text/json'});
-}
-
-function document_distance(d1, d2){
-    const vector = doc => doc.split(' ').reduce((obj, word)=>{
-        if(word in obj) obj[word]++;
-        else obj[word] = 1;
-        return obj;
-    }, {});
-    const dot_prod = (v1, v2)=> Object.keys(v1).reduce((sum, key)=> sum+v1[key]*(v2[key] || 0), 0);
-    const size = (x) => Object.values(vector(x)).reduce((sum, v)=>sum + v**2, 0)**0.5;
-    return dot_prod(vector(d1), vector(d2))/(size(d1)*size(d2));
 }
 
 /*
