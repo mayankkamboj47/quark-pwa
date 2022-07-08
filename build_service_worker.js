@@ -1,3 +1,5 @@
+// This function returns a piece of code. The arguments of the function are converted to
+// code which is inserted into the incomplete code string to create the final code.
 module.exports =  (offlineDocs, documentDistance)=>`
 /**
  * offlineAssets : Things that will be precached when the service worker installs 
