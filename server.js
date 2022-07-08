@@ -18,8 +18,6 @@ Also fill DOCS with data
     }));
 })();
 
-
-
 new Server(async (req, res)=>{
     if(req.url==='/') req.url='/index.html';
     if(req.url.startsWith('/search')) searchTheDocs(req.url.slice(8), res);
