@@ -1,10 +1,12 @@
-if('serviceWorker' in navigator){
+document.onload = ()=>{
+    if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./serviceWorker.js', {
         scope : './'
     });
-}
-else{
-    alert('Your browser does not support offline search sadly :( . Can you update ?');
+    }
+    else{
+        alert('Your browser does not support offline search sadly :( . Can you update ?');
+    }
 }
 
 document.querySelector('#search-form').addEventListener('submit', e => {
@@ -15,6 +17,7 @@ document.querySelector('#search-form').addEventListener('submit', e => {
 
 function writeSearchResultLinks(links){
     const container = elt('section', {id : "search_results"});
+    container.appendChild(elt('h2',{}, 'Search results'))
     for(let link of links)
       container.appendChild(elt('a', {href : link}, link));
     const existing = document.getElementById("search_results");

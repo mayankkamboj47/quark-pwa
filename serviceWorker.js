@@ -8,6 +8,7 @@ const offlineAssets = ['./', '/styles/index.css', './main.js'];
 const offlineDocs = ['./docs/marijn_eloquent.html','./docs/sicp.html'];
 
 (async function(){
+    if(! await caches.has('docs)) return;
     const docs = await caches.open('docs');
     let links = (await docs.keys()).map(req=>'./'+req.url.slice(req.url.indexOf('docs/')));
     let toRemove = links.filter(link=>offlineDocs.indexOf(link) === -1)
